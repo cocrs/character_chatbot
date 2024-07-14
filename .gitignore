@@ -164,3 +164,7 @@ cython_debug/
 
 # chainlit
 .chainlit
+
+# audio
+*.mp3
+*.wav

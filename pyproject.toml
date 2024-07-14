@@ -1,0 +1,29 @@
+[project]
+name = "chatbot"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Kevin", email = "bluebright1402@gmail.com"},
+]
+dependencies = [
+    "chainlit>=1.1.305",
+    "llama-index>=0.10.51",
+    "llama-index-llms-huggingface>=0.2.4",
+    "llama-index-tools-google>=0.1.5",
+    "llama-index-embeddings-huggingface>=0.2.2",
+    "llama-index-llms-ollama>=0.1.5",
+    "soundfile>=0.12.1",
+    "pydub>=0.25.1",
+]
+requires-python = "~=3.10.0"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+ignore_package_warnings = true
