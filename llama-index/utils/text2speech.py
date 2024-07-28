@@ -1,8 +1,7 @@
 import torch
 from transformers import AutoProcessor, BarkModel
 import scipy
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
+from config import device
 
 processor = AutoProcessor.from_pretrained("suno/bark")
 model = BarkModel.from_pretrained("suno/bark").to(device)
