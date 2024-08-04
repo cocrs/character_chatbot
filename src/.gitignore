@@ -1,0 +1,10 @@
+# chainlit
+.chainlit
+
+# audio
+*.mp3
+*.wav
+
+*.npz
+/data
+/models

@@ -9,6 +9,7 @@ from llama_index.core.callbacks.base import CallbackManager
 from utils.speech_recognition import transcribe_audio
 from utils.text2speech import text2speech
 from config import *
+# from utils.voice_cloning.bark_voice_cloner import BarkVoiceCloner
 
 
 @cl.on_chat_start
@@ -59,6 +60,7 @@ async def process_question(question):
     # Retrieve existing documents
     documents = cl.user_session.get("documents")
 
+    # TODO: logic to determine if we need to search
     # google_tool = GoogleSearchToolSpec(key=GOOGLE_API_KEY, engine=ENGINE_ID, num=10)
     # new_documents = google_tool.google_search(question)
     # documents.extend(new_documents)  # Append new documents to existing ones
@@ -73,7 +75,7 @@ async def process_question(question):
         callback_manager=CallbackManager([cl.LlamaIndexCallbackHandler()]),
         memory=chat_memory,
         context_prompt=JA_CONTEXT_PROMPT_TEMPLATE,
-        condense_prompt=JA_CONDENSE_PROMPT_TEMPLATE,
+        # condense_prompt=JA_CONDENSE_PROMPT_TEMPLATE,
         verbose=True,
         skip_condense=True,
     )
@@ -84,6 +86,10 @@ async def process_question(question):
     response = await cl.make_async(chat_engine.chat)(question)
 
     text2speech(response.response, AUDIO_OUTPUT_PATH)
+    # TODO: bark voice cloning, too slow now
+    # cloner = BarkVoiceCloner()
+    # cloner.generate(response.response)
+    
     response_message = cl.Message(
         content="",
         elements=[
