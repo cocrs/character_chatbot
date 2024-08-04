@@ -86,7 +86,7 @@ async def process_question(question):
     response = await cl.make_async(chat_engine.chat)(question)
 
     text2speech(response.response, AUDIO_OUTPUT_PATH)
-    # TODO: bark voice cloning
+    # TODO: bark voice cloning, too slow now
     # cloner = BarkVoiceCloner()
     # cloner.generate(response.response)
     
