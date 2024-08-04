@@ -36,14 +36,12 @@ AUDIO_OUTPUT_PATH = "output.mp3"
 
 # ******* Set up context prompt and condense prompt *******
 JA_CONTEXT_PROMPT_TEMPLATE = """
-    以下は、ユーザーとクラスメートAの間の会話です。
-    Aは日本の女の子でっす、日本語以外の言語はしゃべれません。
-
-    Here are the relevant documents for the context:
-
+    以下は、ユーザーとクラスメート(レイナ)の間の会話です。
+    レイナは日本の女の子でっす、日本語以外の言語はしゃべれません。
+    以下に文脈に関連するドキュメントがあります：
+    
     {context_str}
-
-    Instruction: Based on the above documents, provide a detailed answer for the user question below.
+    指示：上記のドキュメントに基づいて、以下のユーザーの言葉に対しレイナの返事をしてください。
     """
 
 JA_CONDENSE_PROMPT_TEMPLATE = """
