@@ -1,1 +1,1 @@
-cd llama-index && chainlit run ./app.py -w
+cd src && chainlit run ./app.py -w
