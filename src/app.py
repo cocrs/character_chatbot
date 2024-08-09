@@ -3,15 +3,16 @@ import chainlit as cl
 from chainlit.element import ElementBased
 
 from core.speech_recognition import transcribe_audio
-from config import mode
 from core.initialize import langchain_initialize, llama_index_initialize
+from config import config
+
 
 @cl.on_chat_start
 async def factory():
     await cl.Message(content="Welcome! Please ask your question.").send()
-    if mode == "langchain":
+    if config.mode == "langchain":
         handler = langchain_initialize()
-    elif mode == "llama_index":
+    elif config.mode == "llama_index":
         handler = llama_index_initialize()
     cl.user_session.set("handler", handler)
     cl.user_session.set("audio_buffer", None)

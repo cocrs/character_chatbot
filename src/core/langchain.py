@@ -3,8 +3,7 @@ from langchain.schema.runnable import Runnable
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 
-from config import *
-
+from config import config
 from core.text2speech import text2speech
 
 
@@ -31,13 +30,16 @@ class LangchainHandler:
         runnable = cl.user_session.get("runnable")  # type: Runnable
 
         response = await runnable.ainvoke(question)
-        text2speech(response.content, AUDIO_OUTPUT_PATH)
+        text2speech(response.content, config.audio_output_path)
 
         response_message = cl.Message(
             content="",
             elements=[
                 cl.Audio(
-                    name="audio", path=AUDIO_OUTPUT_PATH, display="inline", auto_play=True
+                    name="audio",
+                    path=config.audio_output_path,
+                    display="inline",
+                    auto_play=True,
                 ),
             ],
         )

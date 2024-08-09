@@ -10,7 +10,7 @@ from llama_index.core import Settings
 from llama_index.core.storage.chat_store import SimpleChatStore
 from llama_index.core.memory import ChatMemoryBuffer
 
-from config import *
+from config import config
 from core.text2speech import text2speech
 
 # ******* Set up context prompt and condense prompt *******
@@ -72,14 +72,14 @@ class LlamaIndexHandler:
 
         response = await cl.make_async(chat_engine.chat)(question)
 
-        text2speech(response.response, AUDIO_OUTPUT_PATH)
+        text2speech(response.response, config.audio_output_path)
 
         response_message = cl.Message(
             content="",
             elements=[
                 cl.Audio(
                     name="audio",
-                    path=AUDIO_OUTPUT_PATH,
+                    path=config.audio_output_path,
                     display="inline",
                     auto_play=True,
                 ),
