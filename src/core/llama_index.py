@@ -72,21 +72,20 @@ class LlamaIndexHandler:
 
         response = await cl.make_async(chat_engine.chat)(question)
 
-        text2speech(response.response, config.audio_output_path)
-
-        response_message = cl.Message(
-            content="",
-            elements=[
+        elements = []
+        if config.tts:
+            text2speech(response.content, config.audio_output_path)
+            elements.append(
                 cl.Audio(
                     name="audio",
                     path=config.audio_output_path,
                     display="inline",
                     auto_play=True,
                 ),
-            ],
-        )
+            )
+        response_message = cl.Message(content="", elements=elements)
 
-        for token in response.response:
+        for token in response.content:
             await response_message.stream_token(token=token)
 
         await response_message.send()
