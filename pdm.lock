@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:e03f5446e5533ffdb68678a16b4521cfb320e6e031a868c58b98476e8cb30120"
+content_hash = "sha256:b10d0c3c6ee623ffe092884b509692ce3d0462d222487597ef732920e81325a2"
 
 [[metadata.targets]]
 requires_python = "~=3.10.0"
@@ -419,7 +419,7 @@ files = [
 
 [[package]]
 name = "chainlit"
-version = "1.1.305"
+version = "1.1.402"
 requires_python = "<4.0.0,>=3.8.1"
 summary = "Build Conversational AI."
 groups = ["default"]
@@ -450,8 +450,8 @@ dependencies = [
     "watchfiles<0.21.0,>=0.20.0",
 ]
 files = [
-    {file = "chainlit-1.1.305-py3-none-any.whl", hash = "sha256:9603a1ed873fde84a64fca85e6bf65c7ce138d517ff623c92e92ab2037a38485"},
-    {file = "chainlit-1.1.305.tar.gz", hash = "sha256:cdbe637dc631a05b043124d4c814139ef7c4697858c13e142e527db4a03129be"},
+    {file = "chainlit-1.1.402-py3-none-any.whl", hash = "sha256:f3d16cdb36a0c8724693806f39995ce66cf02cf45d0af741216a49933127cc3a"},
+    {file = "chainlit-1.1.402.tar.gz", hash = "sha256:a3bad14afd6c7f1a50dc085521d09109ed6b5f4c44b7cb861746e6731333e7b4"},
 ]
 
 [[package]]
@@ -3076,7 +3076,7 @@ name = "pyreadline3"
 version = "3.4.1"
 summary = "A python implementation of GNU readline."
 groups = ["default"]
-marker = "sys_platform == \"win32\" and python_version >= \"3.8\""
+marker = "sys_platform == \"win32\""
 files = [
     {file = "pyreadline3-3.4.1-py3-none-any.whl", hash = "sha256:b0efb6516fd4fb07b45949053826a62fa4cb353db5be2bbb4a7aa1fdd1e345fb"},
     {file = "pyreadline3-3.4.1.tar.gz", hash = "sha256:6f3d1f7b8a31ba32b73917cefc1f28cc660562f39aea8646d30bd6eff21f7bae"},

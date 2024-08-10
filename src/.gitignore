@@ -8,3 +8,6 @@
 *.npz
 /data
 /models
+
+# db
+*.db

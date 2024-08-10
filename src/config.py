@@ -14,7 +14,9 @@ class Config:
         self.audio_output_path = "output.mp3"
         self.tts = False
 
+        # for langchain
         self.document_path = "raw_subtitles/16bits_01_JP_Konoha.json"
+        self.use_chat_history = True
 
 
 config = Config()

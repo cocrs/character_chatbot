@@ -1,12 +1,11 @@
 import chainlit as cl
-from langchain.schema.runnable import Runnable
-from langchain_ollama import ChatOllama, OllamaEmbeddings
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_ollama import ChatOllama
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.document_loaders.json_loader import JSONLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
+
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 from config import config
 from core.text2speech import text2speech
@@ -18,48 +17,51 @@ def format_docs(docs):
 
 class LangchainHandler:
     def __init__(self):
+        # load character dialogue
         loader = JSONLoader(
             file_path=config.document_path, jq_schema=".dialogue[].content"
         )
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            add_start_index=True,
-        )
         docs = loader.load()
-        all_splits = text_splitter.split_documents(docs)
-        vectorstore = Chroma.from_documents(
-            documents=all_splits,
-            embedding=OllamaEmbeddings(model="nomic-embed-text"),
-        )
-        self.retriever = vectorstore.as_retriever(
-            search_type="similarity", search_kwargs={"k": 6}
-        )
 
         llm = ChatOllama(
-            model="microai/suzume-llama3",
-            top_p=0.5,
-            repeat_penalty=1.2,
+            model="llama3.1",
+            top_p=0.2,
+            repeat_penalty=1.5,
             # other params...
         )
         system_prompt = (
-            "以下の内容はあなたが話した言葉をあつめたもの。"
-            "この内容をもとに，自分の個性、気持ち、話し方、話の長さを考えて，返事をしてください。"
-            "答えが分からない場合は、無理に返事しなくでもいい。"
+            f"以下の内容はあなたの記憶です。"
+            "この記憶を基に、あなたらしい話し方で相手と会話をしてください。"
             "\n\n"
             f"{format_docs(docs)}"
         )
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", system_prompt),
+                MessagesPlaceholder(variable_name="history"),
                 ("human", "{input}"),
             ]
         )
         runnable = prompt | llm | StrOutputParser()
         self.runnable = runnable
 
+        if config.use_chat_history:
+            self.runnable = RunnableWithMessageHistory(
+                # The underlying runnable
+                runnable,
+                # A function that takes in a session id and returns a memory object
+                self.get_session_history,
+                input_messages_key="input",
+                history_messages_key="history",
+            )
+
+    def get_session_history(self, session_id):
+        return SQLChatMessageHistory(session_id, "sqlite:///memory.db")
+
     async def process_question(self, question):
-        response = self.runnable.invoke(question)
+        response = self.runnable.invoke(
+            {"input": question}, config={"configurable": {"session_id": "1"}}
+        )
 
         elements = []
         if config.tts:
