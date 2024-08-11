@@ -6,7 +6,7 @@ authors = [
     {name = "Kevin", email = "bluebright1402@gmail.com"},
 ]
 dependencies = [
-    "chainlit>=1.1.305",
+    "chainlit>=1.1.402",
     "llama-index>=0.10.51",
     "llama-index-llms-huggingface>=0.2.4",
     "llama-index-tools-google>=0.1.5",
@@ -17,6 +17,12 @@ dependencies = [
     "funcy>=2.0",
     "fairseq>=0.12.2",
     "audiolm-pytorch>=2.0.7",
+    "langchain>=0.2.12",
+    "langchain-ollama>=0.1.1",
+    "langchain-community>=0.2.11",
+    "librosa>=0.10.2.post1",
+    "jq>=1.7.0",
+    "langchain-chroma>=0.1.2",
 ]
 requires-python = "~=3.10.0"
 readme = "README.md"
