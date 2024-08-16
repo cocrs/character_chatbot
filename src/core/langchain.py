@@ -1,3 +1,5 @@
+import os
+from functools import partial
 import chainlit as cl
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -8,7 +10,11 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 from config import config
-from core.text2speech import text2speech
+from core.tts.bark import text2speech
+from omegaconf import OmegaConf
+
+from core.tts.fish.generate import MainGenerator
+from core.tts.fish.inference import inference
 
 
 def format_docs(docs):
@@ -46,6 +52,10 @@ class LangchainHandler:
         self.runnable = runnable
 
         if config.use_chat_history:
+            # delete memory.db if it exists
+            if os.path.exists("memory.db"):
+                os.remove("memory.db")
+
             self.runnable = RunnableWithMessageHistory(
                 # The underlying runnable
                 runnable,
@@ -55,17 +65,36 @@ class LangchainHandler:
                 history_messages_key="history",
             )
 
+        if config.tts:
+            # register eval resolver
+            if not OmegaConf.has_resolver("eval"):
+                OmegaConf.register_new_resolver("eval", eval)
+            conf = OmegaConf.load("./configs/fish.yaml")
+            conf_dict = OmegaConf.to_container(conf)
+            self.fish_generator = MainGenerator(
+                **conf_dict["generate"], device=config.device
+            )
+            self.fish_inference = partial(
+                inference,
+                **conf_dict["inference"],
+                output_path=config.audio_output_path,
+                device=config.device,
+            )
+
     def get_session_history(self, session_id):
         return SQLChatMessageHistory(session_id, "sqlite:///memory.db")
 
     async def process_question(self, question):
+        # FIXME: session_id
         response = self.runnable.invoke(
             {"input": question}, config={"configurable": {"session_id": "1"}}
         )
 
         elements = []
         if config.tts:
-            text2speech(response.content, config.audio_output_path)
+            # text2speech(response, config.audio_output_path)
+            self.fish_generator.generate(response)
+            self.fish_inference()
             elements.append(
                 cl.Audio(
                     name="audio",

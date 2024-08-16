@@ -11,7 +11,7 @@ from llama_index.core.storage.chat_store import SimpleChatStore
 from llama_index.core.memory import ChatMemoryBuffer
 
 from config import config
-from core.text2speech import text2speech
+from core.tts.bark import text2speech
 
 # ******* Set up context prompt and condense prompt *******
 JA_CONTEXT_PROMPT_TEMPLATE = """
