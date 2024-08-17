@@ -8,8 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Optional, Tuple, Union
 
-import click
-import hydra
 import numpy as np
 import torch
 import torch._dynamo.config
@@ -586,8 +584,7 @@ def launch_thread_safe_queue(
     return input_queue
 
 
-
-class MainGenerator:
+class LlamaGenerator:
     def __init__(
         self,
         prompt_text: Optional[list[str]],
@@ -651,10 +648,25 @@ class MainGenerator:
             prompt_tokens=prompt_tokens,
         )
 
-        self.idx = 0
-        self.codes = []
+        logger.info("Model loaded, warming up ...")
+        generate_long(
+            text="おはいようございます!",
+            model=self.model,
+            device=device,
+            decode_one_token=self.decode_one_token,
+            num_samples=num_samples,
+            max_new_tokens=max_new_tokens,
+            top_p=top_p,
+            repetition_penalty=repetition_penalty,
+            temperature=temperature,
+            compile=compile,
+            iterative_prompt=iterative_prompt,
+            chunk_length=chunk_length,
+            prompt_text=None,
+            prompt_tokens=None,
+        )
 
-    def generate(self, text: str) -> None:
+    def run(self, text: str):
         idx = 0
         codes = []
 

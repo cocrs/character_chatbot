@@ -8,6 +8,7 @@ import librosa
 processor = WhisperProcessor.from_pretrained("openai/whisper-base")
 model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base")
 
+
 def transcribe_audio(audio_data: bytes, mime_type: str) -> str:
     with BytesIO(audio_data) as audio_file:
         audio_file.name = f"input_audio.{mime_type.split('/')[1]}"

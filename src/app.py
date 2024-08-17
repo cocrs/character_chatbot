@@ -2,19 +2,15 @@ from io import BytesIO
 import chainlit as cl
 from chainlit.element import ElementBased
 
+from core.agent import Agent
 from core.speech_recognition import transcribe_audio
-from core.initialize import langchain_initialize, llama_index_initialize
-from config import config
+from core.initialize import initialize
 
 
 @cl.on_chat_start
 async def factory():
     await cl.Message(content="Welcome! Please ask your question.").send()
-    if config.mode == "langchain":
-        handler = langchain_initialize()
-    elif config.mode == "llama_index":
-        handler = llama_index_initialize()
-    cl.user_session.set("handler", handler)
+    initialize()
     cl.user_session.set("audio_buffer", None)
     cl.user_session.set("audio_mime_type", None)
 
@@ -47,11 +43,11 @@ async def on_audio_end(elements: list[ElementBased]):
     await cl.Message(content=f"Question: {question}").send()
 
     # Continue with the Chainlit processing
-    handler = cl.user_session.get("handler")
-    await handler.process_question(question)
+    agent: Agent = cl.user_session.get("agent")
+    await agent.process(question)
 
 
 @cl.on_message
 async def on_message(message: cl.Message):
-    handler = cl.user_session.get("handler")
-    await handler.process_question(message.content)
+    agent: Agent = cl.user_session.get("agent")
+    await agent.process(message.content)
