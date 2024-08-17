@@ -10,8 +10,7 @@ from llama_index.core import Settings
 from llama_index.core.storage.chat_store import SimpleChatStore
 from llama_index.core.memory import ChatMemoryBuffer
 
-from config import config
-from core.text2speech import text2speech
+from core.chat_handler.base import ChatHandler
 
 # ******* Set up context prompt and condense prompt *******
 JA_CONTEXT_PROMPT_TEMPLATE = """
@@ -33,7 +32,7 @@ JA_CONDENSE_PROMPT_TEMPLATE = """
     独立した質問:"""
 
 
-class LlamaIndexHandler:
+class LlamaIndexHandler(ChatHandler):
     def __init__(self):
         self.embed_model = HuggingFaceEmbedding(
             model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
@@ -49,12 +48,12 @@ class LlamaIndexHandler:
             token_limit=3000, chat_store=chat_store
         )
 
-    async def process_question(self, question):
-        # Retrieve existing documents
-        documents = cl.user_session.get("documents")
-        cl.user_session.set("documents", documents)
+        # Not using any documents yet
+        self.documents = []
 
-        index = VectorStoreIndex.from_documents(documents)
+    def process_question(self, question: str) -> str:
+        # Retrieve existing documents
+        index = VectorStoreIndex.from_documents(self.documents)
 
         chat_engine = CondensePlusContextChatEngine.from_defaults(
             retriever=index.as_retriever(),
@@ -68,24 +67,5 @@ class LlamaIndexHandler:
             skip_condense=True,
         )
 
-        cl.user_session.set("chat_engine", chat_engine)
-
-        response = await cl.make_async(chat_engine.chat)(question)
-
-        elements = []
-        if config.tts:
-            text2speech(response.content, config.audio_output_path)
-            elements.append(
-                cl.Audio(
-                    name="audio",
-                    path=config.audio_output_path,
-                    display="inline",
-                    auto_play=True,
-                ),
-            )
-        response_message = cl.Message(content="", elements=elements)
-
-        for token in response.content:
-            await response_message.stream_token(token=token)
-
-        await response_message.send()
+        response = chat_engine.chat(question).response
+        return response

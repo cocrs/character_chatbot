@@ -1,4 +1,4 @@
-import chainlit as cl
+import os
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.document_loaders.json_loader import JSONLoader
@@ -8,14 +8,14 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 from config import config
-from core.text2speech import text2speech
+from core.chat_handler.base import ChatHandler
 
 
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-class LangchainHandler:
+class LangchainHandler(ChatHandler):
     def __init__(self):
         # load character dialogue
         loader = JSONLoader(
@@ -46,6 +46,10 @@ class LangchainHandler:
         self.runnable = runnable
 
         if config.use_chat_history:
+            # delete memory.db if it exists
+            if os.path.exists("memory.db"):
+                os.remove("memory.db")
+
             self.runnable = RunnableWithMessageHistory(
                 # The underlying runnable
                 runnable,
@@ -55,28 +59,12 @@ class LangchainHandler:
                 history_messages_key="history",
             )
 
-    def get_session_history(self, session_id):
+    def get_session_history(self, session_id: str):
         return SQLChatMessageHistory(session_id, "sqlite:///memory.db")
 
-    async def process_question(self, question):
+    def process_question(self, question: str) -> str:
+        # FIXME: session_id
         response = self.runnable.invoke(
             {"input": question}, config={"configurable": {"session_id": "1"}}
         )
-
-        elements = []
-        if config.tts:
-            text2speech(response.content, config.audio_output_path)
-            elements.append(
-                cl.Audio(
-                    name="audio",
-                    path=config.audio_output_path,
-                    display="inline",
-                    auto_play=True,
-                ),
-            )
-        response_message = cl.Message(content="", elements=elements)
-
-        for token in response:
-            await response_message.stream_token(token=token)
-
-        await response_message.send()
+        return response
