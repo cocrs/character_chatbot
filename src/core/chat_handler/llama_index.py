@@ -67,5 +67,5 @@ class LlamaIndexHandler(ChatHandler):
             skip_condense=True,
         )
 
-        response = chat_engine.chat(question).response
+        response = cl.make_async(chat_engine.chat)(question).response
         return response

@@ -26,15 +26,15 @@ class Agent:
             )
 
     async def process(self, question: str) -> None:
-        response = self.chat_handler.process_question(question)
+        response = await self.chat_handler.process_question(question)
 
         elements = []
         if config.tts is not None:
             if config.tts == "bark":
                 text2speech(response, config.audio_output_path)
             elif config.tts == "fish":
-                self.fish_generator.run(response)
-                self.fish_inference.run()
+                await cl.make_async(self.fish_generator.run)(response)
+                await cl.make_async(self.fish_inference.run)()
             elements.append(
                 cl.Audio(
                     name="audio",
