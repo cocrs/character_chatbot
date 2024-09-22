@@ -20,7 +20,7 @@ class Config:
     use_chat_history: bool = True
 
     # tts
-    tts: str | None = "fish" # bark or fish
+    tts: str | None = None # bark or fish
     audio_output_path: str = "../output/clone.wav"
 
 
