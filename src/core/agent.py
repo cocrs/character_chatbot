@@ -5,6 +5,8 @@ from core.chat_handler.base import ChatHandler
 from core.tts.bark import text2speech
 from core.tts.fish.generate import LlamaGenerator
 from core.tts.fish.inference import VQGANInference
+from core.speech_recognition import transcribe_audio
+from core.utils import load_audio_as_bytes
 
 
 class Agent:
@@ -16,13 +18,22 @@ class Agent:
                 OmegaConf.register_new_resolver("eval", eval)
             conf = OmegaConf.load("./configs/fish.yaml")
             conf_dict = OmegaConf.to_container(conf)
-            self.fish_generator = LlamaGenerator(
-                **conf_dict["generate"], device=config.device
-            )
+
+            # use speech recognition to extract prompt text from reference audio
+            # if conf_dict["generate"]["use_speech_recognition"]:
+            #     audio_ref = conf_dict["inference"]["audio_reference"]
+            #     prompt_text = [transcribe_audio(*load_audio_as_bytes(audio_ref))]
+            #     print("Prompt text:", prompt_text)
+            #     conf_dict["generate"]["prompt_text"] = prompt_text
+
             self.fish_inference = VQGANInference(
                 **conf_dict["inference"],
+                audio_reference=conf_dict["audio_reference"],
                 output_path=config.audio_output_path,
                 device=config.device,
+            )
+            self.fish_generator = LlamaGenerator(
+                **conf_dict["generate"], device=config.device
             )
 
     async def process(self, question: str) -> None:

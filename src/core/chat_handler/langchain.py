@@ -23,12 +23,6 @@ def format_docs(docs):
 
 class LangchainHandler(ChatHandler):
     def __init__(self):
-        # llm = ChatOllama(
-        #     model="llama3.1-RP",
-        #     top_p=0.2,
-        #     repeat_penalty=1.5,
-        #     # other params...
-        # )
         model, tokenizer = FastLanguageModel.from_pretrained(
             "cyberagent/Mistral-Nemo-Japanese-Instruct-2408",
             max_seq_length=2048,
@@ -59,12 +53,12 @@ class LangchainHandler(ChatHandler):
                 # The underlying runnable
                 runnable,
                 # A function that takes in a session id and returns a memory object
-                self.get_session_history,
+                self.__get_session_history,
                 input_messages_key="input",
                 history_messages_key="history",
             )
 
-    def get_session_history(self, session_id: str):
+    def __get_session_history(self, session_id: str):
         return SQLChatMessageHistory(session_id, "sqlite:///memory.db")
 
     async def process_question(self, question: str) -> str:
