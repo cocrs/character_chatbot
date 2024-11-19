@@ -1,5 +1,5 @@
 use_speech_recognition: True # whisper
-audio_reference: ../voices/cut.wav
+audio_reference: ../voices/ref.wav
 
 inference:
   # encode voice (generate npy codes)
@@ -10,7 +10,7 @@ inference:
   checkpoint_path: ../checkpoints/fish-speech-1.4/firefly-gan-vq-fsq-8x1024-21hz-generator.pth
 
 generate:
-  prompt_text: [""]
+  prompt_text: ["Reference text of the audio."]
   prompt_tokens: ["../output/clone.npy"]
   num_samples: 1
   max_new_tokens: 0

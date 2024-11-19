@@ -1,8 +1,10 @@
 # Character Conversational AI with Voice Cloning
 
-This project aims to build a multi-agent conversational AI for characters. Allowing users to interact with them or observe the interaction between characters.
+##### 🚧 **Work in Progress**  
+- **Current focus**: Developing a single-agent conversational AI tailored for Japanese.  
+- **Ongoing efforts**: Optimizing loading and inference speeds.  
 
-##### 🚧 In Progress: Single-Agent Conversational AI
+This project aims to build a multi-agent conversational AI for characters. Allowing users to interact with them or observe the interaction between characters.
 
 ## Quick Install
 
@@ -23,6 +25,8 @@ pdm install
 ```
 
 ## How to run
+- Path of audio for cloning: `voices/ref.wav`
+- Edit `prompt_text` in `configs/fish.yaml` for the reference audio
 
 ```
 bash scripts/run.sh
