@@ -1,20 +1,24 @@
-# Multi-Agent Anime Character Conversational AI with Voice Cloning
+# Character Conversational AI with Voice Cloning
 
-This project aims to build a multi-agent conversational AI for anime characters. Allowing users to interact with them or observe the interaction between characters.
+This project aims to build a multi-agent conversational AI for characters. Allowing users to interact with them or observe the interaction between characters.
+
+##### 🚧 In Progress: Single-Agent Conversational AI
 
 ## Quick Install
 
-#### Download Models
+Clone required repositories:
+```
+git clone https://github.com/cocrs/character_chatbot.git
+cd character_chatbot
+git clone -b v1.4.2 https://github.com/fishaudio/fish-speech.git
+huggingface-cli download fishaudio/fish-speech-1.4 --local-dir checkpoints/fish-speech-1.4/
+```
 
-- Chatbot: Download [Ollama](https://ollama.com/) and [llama3.1](https://ollama.com/library/llama3.1).
-
-#### Clone this repo
-
-- TTS (Optional): Clone [Fish Speech](https://github.com/fishaudio/fish-speech) and put in this repo.
-
-Install with [pdm](https://pdm-project.org/en/latest/):
+- Install with [pdm](https://pdm-project.org/en/latest/):
 
 ```
+conda create -n character-chatbot python=3.10
+conda activate character-chatbot
 pdm install
 ```
 
@@ -31,3 +35,10 @@ bash scripts/run.sh
   - [ ] TTS
 
 #### Multi-Agent Conversational AI -->
+
+## Credits
+
+- [Chainlit](https://github.com/chainlit/chainlit)
+- [Langchain](https://github.com/hwchase17/lanlchain)
+- [Fish-speech](https://github.com/fishaudio/fish-speech)
+- [Whisper](https://github.com/openai/whisper)
