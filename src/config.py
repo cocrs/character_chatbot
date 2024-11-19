@@ -9,14 +9,13 @@ load_dotenv()
 
 @dataclass
 class Config:
-    google_api_key: str = os.environ.get("GOOGLE_API_KEY")
-    engine_id: str = os.environ.get("ENGINE_ID")
+    # google_api_key: str = os.environ.get("GOOGLE_API_KEY")
+    # engine_id: str = os.environ.get("ENGINE_ID")
 
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
     mode: str = "langchain"
 
     # for langchain
-    document_path: str = "raw_subtitles/16bits_01_JP_Konoha.json"
     use_chat_history: bool = True
 
     # tts
