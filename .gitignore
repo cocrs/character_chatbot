@@ -171,3 +171,9 @@ voices/
 
 # local package
 fish-speech/
+
+Archive/
+data/
+
+# local files
+*.local.*

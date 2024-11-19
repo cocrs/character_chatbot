@@ -1,4 +1,5 @@
 # based on https://github.com/fishaudio/fish-speech/blob/main/tools/llama/generate.py
+from contextlib import nullcontext
 from functools import partial
 import os
 import queue
@@ -94,13 +95,17 @@ def decode_one_token_ar(
     **sampling_kwargs,
 ) -> torch.Tensor:
     x = model.forward_generate(x, input_pos)
+
+    sampling_kwargs_main = sampling_kwargs.copy()
+    sampling_kwargs_main["temperature"] = 0.1
+    sampling_kwargs_main["top_p"] = 0.1
+    sampling_kwargs_main["repetition_penalty"] = 1.0
+
     codebooks = [
         sample(
             x.logits,
-            previous_tokens=(
-                previous_tokens[0] if previous_tokens is not None else None
-            ),  # Disable repetition penalty for the token codebook
-            **sampling_kwargs,
+            previous_tokens=None,  # Disable repetition penalty for the token codebook
+            **sampling_kwargs_main,
         )[0]
     ]
     x = x.hidden_states
@@ -137,11 +142,16 @@ def decode_one_token_naive(
 ) -> torch.Tensor:
     x = model.forward_generate(x, input_pos)
 
+    sampling_kwargs_main = sampling_kwargs.copy()
+    sampling_kwargs_main["temperature"] = 0.1
+    sampling_kwargs_main["top_p"] = 0.1
+    sampling_kwargs_main["repetition_penalty"] = 1.0
+
     codebooks = [
         sample(
-            x.token_logits,
+            x.logits,
             previous_tokens=None,  # Disable repetition penalty for the token codebook
-            **sampling_kwargs,
+            **sampling_kwargs_main,
         )[0]
     ]
 
@@ -182,8 +192,12 @@ def decode_n_tokens(
         else:
             window = previous_tokens[:, i - win_size : i]
 
-        with torch.backends.cuda.sdp_kernel(
-            enable_flash=False, enable_mem_efficient=False, enable_math=True
+        with (
+            torch.backends.cuda.sdp_kernel(
+                enable_flash=False, enable_mem_efficient=False, enable_math=True
+            )
+            if torch.cuda.is_available()
+            else nullcontext()
         ):  # Actually better for Inductor to codegen attention here
             next_token = decode_one_token(
                 model=model,
@@ -241,7 +255,9 @@ def generate(
 
     codebook_dim = 1 + model.config.num_codebooks
     # create an empty tensor of the expected final shape and fill in the current tokens
-    empty = torch.empty((codebook_dim, T_new), dtype=dtype, device=device)
+    empty = torch.empty(
+        (codebook_dim, model.config.max_seq_len), dtype=dtype, device=device
+    )
     empty[:, :T] = prompt
     seq = empty
     input_pos = torch.arange(0, T, device=device)
@@ -334,6 +350,7 @@ def encode_tokens(
     main_token_ids[0, -1] = end_token_id
 
     data = torch.cat((main_token_ids, data), dim=0)
+    print(prompt.shape, data.shape)
     prompt = torch.cat((prompt, data), dim=1)
 
     return prompt
@@ -357,7 +374,10 @@ def load_model(checkpoint_path, device, precision, compile=False):
     if compile:
         logger.info("Compiling function...")
         decode_one_token = torch.compile(
-            decode_one_token, mode="reduce-overhead", fullgraph=True
+            decode_one_token,
+            fullgraph=True,
+            backend="inductor" if torch.cuda.is_available() else "aot_eager",
+            mode="reduce-overhead" if torch.cuda.is_available() else None,
         )
 
     return model.eval(), decode_one_token
@@ -615,7 +635,12 @@ class LlamaGenerator:
         self.model, self.decode_one_token = load_model(
             checkpoint_path, device, precision, compile=compile
         )
-
+        with torch.device(device):
+            self.model.setup_caches(
+                max_batch_size=1,
+                max_seq_len=self.model.config.max_seq_len,
+                dtype=next(self.model.parameters()).dtype,
+            )
         if torch.cuda.is_available():
             torch.cuda.synchronize()
 

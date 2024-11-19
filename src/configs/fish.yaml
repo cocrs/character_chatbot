@@ -1,18 +1,23 @@
+use_speech_recognition: True # whisper
+audio_reference: ../voices/ref.wav
+
 inference:
+  # encode voice (generate npy codes)
+  encode_voice: if_not_exist # always, if_not_exist
+  # inference
   input_path: ../output/codes_0.npy
-  # output_path: output/clone.wav
   config_name: firefly_gan_vq
-  checkpoint_path: ../checkpoints/fish-speech-1.2-sft/firefly-gan-vq-fsq-4x1024-42hz-generator.pth
+  checkpoint_path: ../checkpoints/fish-speech-1.4/firefly-gan-vq-fsq-8x1024-21hz-generator.pth
 
 generate:
-  prompt_text: ["Reference text of the voice."]
-  prompt_tokens: ["../output/fake.npy"]
+  prompt_text: ["Reference text of the audio."]
+  prompt_tokens: ["../output/clone.npy"]
   num_samples: 1
   max_new_tokens: 0
   top_p: 0.7
   repetition_penalty: 1.2
   temperature: 0.7
-  checkpoint_path: ../checkpoints/fish-speech-1.2-sft
+  checkpoint_path: ../checkpoints/fish-speech-1.4
   compile: True
   seed: 42
   half: False

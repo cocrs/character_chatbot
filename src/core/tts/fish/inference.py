@@ -10,7 +10,18 @@ from hydra import compose, initialize
 from hydra.utils import instantiate
 from loguru import logger
 
-from fish_speech.utils.file import AUDIO_EXTENSIONS
+AUDIO_EXTENSIONS = {
+    ".mp3",
+    ".wav",
+    ".flac",
+    ".ogg",
+    ".m4a",
+    ".wma",
+    ".aac",
+    ".aiff",
+    ".aif",
+    ".aifc",
+}
 
 
 def load_model(config_name: str, checkpoint_path: str, device="cuda"):
@@ -22,8 +33,7 @@ def load_model(config_name: str, checkpoint_path: str, device="cuda"):
 
     model = instantiate(cfg)
     state_dict = torch.load(
-        checkpoint_path,
-        map_location=device,
+        checkpoint_path, map_location=device, mmap=True, weights_only=True
     )
     if "state_dict" in state_dict:
         state_dict = state_dict["state_dict"]
@@ -35,7 +45,7 @@ def load_model(config_name: str, checkpoint_path: str, device="cuda"):
             if "generator." in k
         }
 
-    result = model.load_state_dict(state_dict, strict=False)
+    result = model.load_state_dict(state_dict, strict=False, assign=True)
     model.eval()
     model.to(device)
 
@@ -46,19 +56,37 @@ def load_model(config_name: str, checkpoint_path: str, device="cuda"):
 class VQGANInference:
     def __init__(
         self,
+        encode_voice: str,
+        audio_reference: str,
         input_path: str,
         output_path: str,
         config_name: str,
         checkpoint_path: str,
         device: str,
     ):
-        self.input_path = Path(input_path)
         self.output_path = Path(output_path)
         self.config_name = config_name
         self.checkpoint_path = checkpoint_path
         self.device = device
 
         self.model = load_model(config_name, checkpoint_path, device=device)
+
+        if encode_voice == "always":
+            self.input_path = Path(audio_reference)
+            self.run()
+            self.input_path = Path(input_path)
+        elif encode_voice == "if_not_exist":
+            if not Path(input_path).exists():
+                print(
+                    f"{input_path} does not exist. Generating codes from {audio_reference}"
+                )
+                self.input_path = Path(audio_reference)
+                self.run()
+            self.input_path = Path(input_path)
+        else:
+            raise ValueError(
+                f"Unknown encode_voice value: {encode_voice}, expected one of ['always', 'if_not_exist']"
+            )
 
     @torch.no_grad()
     def run(self):
@@ -98,7 +126,7 @@ class VQGANInference:
 
         # Restore
         feature_lengths = torch.tensor([indices.shape[1]], device=self.device)
-        fake_audios = self.model.decode(
+        fake_audios, _ = self.model.decode(
             indices=indices[None], feature_lengths=feature_lengths
         )
         audio_time = fake_audios.shape[-1] / self.model.spec_transform.sample_rate

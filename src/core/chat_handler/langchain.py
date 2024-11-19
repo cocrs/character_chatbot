@@ -1,4 +1,5 @@
 import os
+from langchain_huggingface import ChatHuggingFace
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.document_loaders.json_loader import JSONLoader
@@ -9,6 +10,11 @@ from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 from config import config
 from core.chat_handler.base import ChatHandler
+import chainlit as cl
+
+from langchain_huggingface.llms import HuggingFacePipeline
+from unsloth import FastLanguageModel
+from transformers import pipeline
 
 
 def format_docs(docs):
@@ -17,54 +23,54 @@ def format_docs(docs):
 
 class LangchainHandler(ChatHandler):
     def __init__(self):
-        # load character dialogue
-        loader = JSONLoader(
-            file_path=config.document_path, jq_schema=".dialogue[].content"
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            "cyberagent/Mistral-Nemo-Japanese-Instruct-2408",
+            max_seq_length=2048,
+            load_in_4bit=True,
         )
-        docs = loader.load()
+        FastLanguageModel.for_inference(model)
+        pipe = pipeline(
+            "text-generation", model=model, tokenizer=tokenizer, return_full_text=False
+        )
+        self.llm = ChatHuggingFace(
+            llm=HuggingFacePipeline(pipeline=pipe), tokenizer=tokenizer
+        )
 
-        llm = ChatOllama(
-            model="llama3.1",
-            top_p=0.2,
-            repeat_penalty=1.5,
-            # other params...
-        )
-        system_prompt = (
-            f"以下の内容はあなたの記憶です。"
-            "この記憶を基に、あなたらしい話し方で相手と会話をしてください。"
-            "\n\n"
-            f"{format_docs(docs)}"
-        )
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", system_prompt),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{input}"),
-            ]
-        )
-        runnable = prompt | llm | StrOutputParser()
-        self.runnable = runnable
+        self.sync_with_current_setting(remove_memory=True)
+
+    def sync_with_current_setting(self, remove_memory=False):
+        settings = cl.user_session.get("settings")
+        system_prompt = f"あなたは「assistant」として、以下のキャラクター設定と世界観の情報に基づいて「user」のメッセージに自然な返事をしてください。\n\nassistantのキャラクター設定：{settings['character_setting']}。\n世界観の情報：{settings['world_view']}"
+        messages = [
+            ("system", system_prompt),
+        ]
+        if config.use_chat_history:
+            messages.append(MessagesPlaceholder(variable_name="history"))
+        messages.append(("user", "{input}"))
+        prompt = ChatPromptTemplate.from_messages(messages)
+
+        self.runnable = prompt | self.llm | StrOutputParser()
 
         if config.use_chat_history:
             # delete memory.db if it exists
-            if os.path.exists("memory.db"):
+            if remove_memory and os.path.exists("memory.db"):
                 os.remove("memory.db")
 
             self.runnable = RunnableWithMessageHistory(
                 # The underlying runnable
-                runnable,
+                self.runnable,
                 # A function that takes in a session id and returns a memory object
-                self.get_session_history,
+                self.__get_session_history,
                 input_messages_key="input",
                 history_messages_key="history",
             )
 
-    def get_session_history(self, session_id: str):
+    def __get_session_history(self, session_id: str):
         return SQLChatMessageHistory(session_id, "sqlite:///memory.db")
 
-    def process_question(self, question: str) -> str:
+    async def process_question(self, question: str) -> str:
         # FIXME: session_id
-        response = self.runnable.invoke(
+        response = await cl.make_async(self.runnable.invoke)(
             {"input": question}, config={"configurable": {"session_id": "1"}}
         )
         return response
