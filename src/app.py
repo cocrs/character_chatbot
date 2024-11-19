@@ -8,11 +8,20 @@ from core.initialize import initialize
 
 
 @cl.on_chat_start
-async def factory():
+async def start():
     await cl.Message(content="Welcome! Please ask your question.").send()
-    initialize()
+    await initialize()
     cl.user_session.set("audio_buffer", None)
     cl.user_session.set("audio_mime_type", None)
+
+
+@cl.on_settings_update
+async def setup_agent(settings):
+    print("on_settings_update", settings)
+    # TODO: should not be able to change setting after chat has started
+    if "character_setting" in settings or "world_view" in settings:
+        agent: Agent = cl.user_session.get("agent")
+        agent.chat_handler.sync_with_current_setting()
 
 
 @cl.on_audio_chunk

@@ -29,10 +29,18 @@ class LangchainHandler(ChatHandler):
             load_in_4bit=True,
         )
         FastLanguageModel.for_inference(model)
-        pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, return_full_text=False)
-        llm = ChatHuggingFace(llm=HuggingFacePipeline(pipeline=pipe), tokenizer=tokenizer)
+        pipe = pipeline(
+            "text-generation", model=model, tokenizer=tokenizer, return_full_text=False
+        )
+        self.llm = ChatHuggingFace(
+            llm=HuggingFacePipeline(pipeline=pipe), tokenizer=tokenizer
+        )
 
-        system_prompt = f"あなたは「assistant」として、以下のキャラクター設定と世界観の情報に基づいて「user」のメッセージに自然な返事をしてください。\n\nassistantのキャラクター設定：カフェの常連の男性。名前は拓也。趣味は写真で、フレンドリーだが少しシャイ。\n世界観の情報：都会の喧騒の中、小さなカフェが人々の憩いの場となっている。\n\nuserのことは、会話の中で理解できます。"
+        self.sync_with_current_setting(remove_memory=True)
+
+    def sync_with_current_setting(self, remove_memory=False):
+        settings = cl.user_session.get("settings")
+        system_prompt = f"あなたは「assistant」として、以下のキャラクター設定と世界観の情報に基づいて「user」のメッセージに自然な返事をしてください。\n\nassistantのキャラクター設定：{settings['character_setting']}。\n世界観の情報：{settings['world_view']}"
         messages = [
             ("system", system_prompt),
         ]
@@ -41,17 +49,16 @@ class LangchainHandler(ChatHandler):
         messages.append(("user", "{input}"))
         prompt = ChatPromptTemplate.from_messages(messages)
 
-        runnable = prompt | llm | StrOutputParser()
-        self.runnable = runnable
+        self.runnable = prompt | self.llm | StrOutputParser()
 
         if config.use_chat_history:
             # delete memory.db if it exists
-            if os.path.exists("memory.db"):
+            if remove_memory and os.path.exists("memory.db"):
                 os.remove("memory.db")
 
             self.runnable = RunnableWithMessageHistory(
                 # The underlying runnable
-                runnable,
+                self.runnable,
                 # A function that takes in a session id and returns a memory object
                 self.__get_session_history,
                 input_messages_key="input",
