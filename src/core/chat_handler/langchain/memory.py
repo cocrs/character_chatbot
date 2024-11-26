@@ -1,24 +1,17 @@
-import json
-from typing import List, Literal, Optional
+from typing import List
+import uuid
 
-import tiktoken
-from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
-from langchain_core.messages import get_buffer_string
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_openai import ChatOpenAI
-from langchain_openai.embeddings import OpenAIEmbeddings
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import END, START, MessagesState, StateGraph
-from langgraph.prebuilt import ToolNode
+from langchain_huggingface import HuggingFaceEmbeddings
+from langgraph.graph import END, START, MessagesState
 
-import uuid
+recall_vector_store = InMemoryVectorStore(
+    HuggingFaceEmbeddings(model_name="cyberagent/Mistral-Nemo-Japanese-Instruct-2408")
+)
 
-recall_vector_store = InMemoryVectorStore(OpenAIEmbeddings())
 
 def get_user_id(config: RunnableConfig) -> str:
     user_id = config["configurable"].get("user_id")
@@ -52,68 +45,10 @@ def search_recall_memories(query: str, config: RunnableConfig) -> List[str]:
     )
     return [document.page_content for document in documents]
 
+
 tools = [save_recall_memory, search_recall_memories]
 
 
 class State(MessagesState):
     # add memories that will be retrieved based on the conversation context
     recall_memories: List[str]
-    
-# TODO: refactor to use langgraph
-
-# def agent(state: State) -> State:
-#     """Process the current state and generate a response using the LLM.
-
-#     Args:
-#         state (schemas.State): The current state of the conversation.
-
-#     Returns:
-#         schemas.State: The updated state with the agent's response.
-#     """
-#     bound = prompt | model_with_tools
-#     recall_str = (
-#         "<recall_memory>\n" + "\n".join(state["recall_memories"]) + "\n</recall_memory>"
-#     )
-#     prediction = bound.invoke(
-#         {
-#             "messages": state["messages"],
-#             "recall_memories": recall_str,
-#         }
-#     )
-#     return {
-#         "messages": [prediction],
-#     }
-
-
-# def load_memories(state: State, config: RunnableConfig) -> State:
-#     """Load memories for the current conversation.
-
-#     Args:
-#         state (schemas.State): The current state of the conversation.
-#         config (RunnableConfig): The runtime configuration for the agent.
-
-#     Returns:
-#         State: The updated state with loaded memories.
-#     """
-#     convo_str = get_buffer_string(state["messages"])
-#     convo_str = tokenizer.decode(tokenizer.encode(convo_str)[:2048])
-#     recall_memories = search_recall_memories.invoke(convo_str, config)
-#     return {
-#         "recall_memories": recall_memories,
-#     }
-
-
-# def route_tools(state: State):
-#     """Determine whether to use tools or end the conversation based on the last message.
-
-#     Args:
-#         state (schemas.State): The current state of the conversation.
-
-#     Returns:
-#         Literal["tools", "__end__"]: The next step in the graph.
-#     """
-#     msg = state["messages"][-1]
-#     if msg.tool_calls:
-#         return "tools"
-
-#     return END
