@@ -9,7 +9,10 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langgraph.graph import END, START, MessagesState
 
 recall_vector_store = InMemoryVectorStore(
-    HuggingFaceEmbeddings(model_name="cyberagent/Mistral-Nemo-Japanese-Instruct-2408")
+    HuggingFaceEmbeddings(
+        model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+        model_kwargs={"device": "cpu"},
+    )
 )
 
 

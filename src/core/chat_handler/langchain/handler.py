@@ -34,7 +34,6 @@ class LangchainHandler(ChatHandler):
         self.llm = ChatHuggingFace(
             llm=HuggingFacePipeline(pipeline=pipe), tokenizer=tokenizer
         )
-        self.tokenizer = tokenizer
 
         self.sync_with_current_setting(remove_memory=True)
 
@@ -42,12 +41,14 @@ class LangchainHandler(ChatHandler):
         settings = cl.user_session.get("settings")
         system_prompt = f"あなたは「assistant」として、以下のキャラクター設定と世界観の情報に基づいて「user」のメッセージに自然な返事をしてください。\n\nassistantのキャラクター設定：{settings['character_setting']}。\n世界観の情報：{settings['world_view']}"
         messages = [
-            ("system", system_prompt),
+            (
+                "system",
+                "会話の記録:\n{recall_memories}\n\n" f"{system_prompt}",
+            ),
             ("placeholder", "{messages}"),
         ]
         prompt = ChatPromptTemplate.from_messages(messages)
-        # model_with_tools = self.llm.bind_tools(tools)
-        tokenizer = self.tokenizer
+        model_with_tools = self.llm.bind_tools(tools)
 
         def agent(state: State) -> State:
             """Process the current state and generate a response using the LLM.
@@ -58,7 +59,7 @@ class LangchainHandler(ChatHandler):
             Returns:
                 schemas.State: The updated state with the agent's response.
             """
-            bound = prompt | self.llm
+            bound = prompt | model_with_tools
             recall_str = (
                 "<recall_memory>\n"
                 + "\n".join(state["recall_memories"])
@@ -85,7 +86,9 @@ class LangchainHandler(ChatHandler):
                 State: The updated state with loaded memories.
             """
             convo_str = get_buffer_string(state["messages"])
-            convo_str = tokenizer.decode(tokenizer.encode(convo_str)[:2048])
+            convo_str = self.llm.tokenizer.decode(
+                self.llm.tokenizer.encode(convo_str)[:2048]
+            )
             recall_memories = search_recall_memories.invoke(convo_str, config)
             return {
                 "recall_memories": recall_memories,
@@ -125,6 +128,6 @@ class LangchainHandler(ChatHandler):
         # FIXME: session_id
         response = await cl.make_async(self.runnable.invoke)(
             {"messages": [("user", question)]},
-            config={"configurable": {"thread_id": "1"}},
+            config={"configurable": {"user_id": "1", "thread_id": "1"}},
         )
-        return response
+        return response["messages"][-1].content
