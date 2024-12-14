@@ -8,6 +8,7 @@
 This project aims to build a multi-agent conversational AI for characters. Allowing users to interact with them or observe the interaction between characters.
 
 ## Quick Install
+<!-- TODO: edit compose and .env -->
 
 Clone required repositories:
 

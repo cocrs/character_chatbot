@@ -1,0 +1,14 @@
+# Python
+__pycache__
+app.egg-info
+*.pyc
+.mypy_cache
+.coverage
+htmlcov
+.venv
+.gitignore
+
+# pdm
+pdm.lock
+pyproject.toml
+README.md

@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:547fc04e7791134a9c2886dcc78e17fa711e364f23bd163cb0987e6027cb0f29"
+content_hash = "sha256:f0d1a746592efbe58f144dfbf8a332eaf7b0eccdaa7b5aa4a1883be5810ff918"
 
 [[metadata.targets]]
 requires_python = "~=3.10.0"
@@ -1793,6 +1793,20 @@ files = [
 ]
 
 [[package]]
+name = "langgraph-cli"
+version = "0.1.62"
+requires_python = "<4.0.0,>=3.9.0"
+summary = "CLI for interacting with LangGraph API"
+groups = ["default"]
+dependencies = [
+    "click<9.0.0,>=8.1.7",
+]
+files = [
+    {file = "langgraph_cli-0.1.62-py3-none-any.whl", hash = "sha256:6dc92d40935bab7b02540383164bc4b505059aa369be5f9eb5deef933088e3a7"},
+    {file = "langgraph_cli-0.1.62.tar.gz", hash = "sha256:16227b39df1b09b6c4b9f6905fcaf060d5584b6db6ee562de414259c171f24cb"},
+]
+
+[[package]]
 name = "langgraph-sdk"
 version = "0.1.36"
 requires_python = "<4.0.0,>=3.9.0"
@@ -3124,6 +3138,16 @@ groups = ["default"]
 files = [
     {file = "pygments-2.18.0-py3-none-any.whl", hash = "sha256:b8e6aca0523f3ab76fee51799c488e38782ac06eafcf95e7ba832985c8e7b13a"},
     {file = "pygments-2.18.0.tar.gz", hash = "sha256:786ff802f32e91311bff3889f6e9a86e81505fe99f2735bb6d60ae0c5004f199"},
+]
+
+[[package]]
+name = "pygraphviz"
+version = "1.14"
+requires_python = ">=3.10"
+summary = "Python interface to Graphviz"
+groups = ["default"]
+files = [
+    {file = "pygraphviz-1.14.tar.gz", hash = "sha256:c10df02377f4e39b00ae17c862f4ee7e5767317f1c6b2dfd04cea6acc7fc2bea"},
 ]
 
 [[package]]

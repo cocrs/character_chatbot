@@ -177,3 +177,4 @@ data/
 
 # local files
 *.local.*
+compose.yml

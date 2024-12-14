@@ -1,1 +1,0 @@
-cd src && chainlit run ./app.py -w

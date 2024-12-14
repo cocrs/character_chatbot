@@ -1,18 +1,16 @@
-from time import clock_getres
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter
 
 import chat.services as services_chat
 import chat.schemas as schemas_chat
 
-from langchain_core.language_models.base import LanguageModelInput
+from langchain_core.messages import BaseMessage
 
 router = APIRouter()
 
 
-@router.post("/invoke")
+@router.post("/invoke", response_model=BaseMessage)
 def invoke(
-    input: LanguageModelInput,
+    request: schemas_chat.Request,
 ):
-    return services_chat.invoke(input)
+    pred = services_chat.invoke(request.input)
+    return pred
