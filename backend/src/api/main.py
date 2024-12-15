@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
-from api.routes import chat
+from src.core.chat.model_loader import load_model
+from langserve import add_routes
 
 api_router = APIRouter()
-api_router.include_router(chat.router, prefix="/chat", tags=["chat"])
+add_routes(api_router, load_model(), path="/chat")
