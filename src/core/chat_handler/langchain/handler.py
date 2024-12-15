@@ -2,16 +2,11 @@ import chainlit as cl
 from langchain_core.messages import get_buffer_string
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
-from langchain_core.tools import tool
-from langchain_huggingface import ChatHuggingFace
-from langchain_huggingface.llms import HuggingFacePipeline
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import END, START, MessagesState, StateGraph
+from langgraph.graph import END, START, StateGraph
 from langgraph.prebuilt import ToolNode
-from transformers import pipeline
-from unsloth import FastLanguageModel
+from langserve import RemoteRunnable
 
-from config import config
 from core.chat_handler.base import ChatHandler
 from core.chat_handler.langchain.memory import State, search_recall_memories, tools
 
@@ -22,18 +17,8 @@ def format_docs(docs):
 
 class LangchainHandler(ChatHandler):
     def __init__(self):
-        model, tokenizer = FastLanguageModel.from_pretrained(
-            "cyberagent/Mistral-Nemo-Japanese-Instruct-2408",
-            max_seq_length=2048,
-            load_in_4bit=True,
-        )
-        FastLanguageModel.for_inference(model)
-        pipe = pipeline(
-            "text-generation", model=model, tokenizer=tokenizer, return_full_text=False
-        )
-        self.llm = ChatHuggingFace(
-            llm=HuggingFacePipeline(pipeline=pipe), tokenizer=tokenizer
-        )
+
+        self.llm = RemoteRunnable("http://localhost:4000/api/v1/chat")
 
         self.sync_with_current_setting(remove_memory=True)
 
@@ -48,7 +33,8 @@ class LangchainHandler(ChatHandler):
             ("placeholder", "{messages}"),
         ]
         prompt = ChatPromptTemplate.from_messages(messages)
-        model_with_tools = self.llm.bind_tools(tools)
+        # FIXME: tools
+        model_with_tools = self.llm
 
         def agent(state: State) -> State:
             """Process the current state and generate a response using the LLM.
@@ -86,9 +72,10 @@ class LangchainHandler(ChatHandler):
                 State: The updated state with loaded memories.
             """
             convo_str = get_buffer_string(state["messages"])
-            convo_str = self.llm.tokenizer.decode(
-                self.llm.tokenizer.encode(convo_str)[:2048]
-            )
+            # FIXME
+            # convo_str = self.llm.tokenizer.decode(
+            #     self.llm.tokenizer.encode(convo_str)[:2048]
+            # )
             recall_memories = search_recall_memories.invoke(convo_str, config)
             return {
                 "recall_memories": recall_memories,
@@ -125,6 +112,26 @@ class LangchainHandler(ChatHandler):
         self.runnable = builder.compile(checkpointer=memory)
 
     async def process_question(self, question: str) -> str:
+        def pretty_print_stream_chunk(chunk):
+            for node, updates in chunk.items():
+                print(f"Update from node: {node}")
+                if "messages" in updates:
+                    print(updates["messages"])
+                    updates["messages"][-1].pretty_print()
+                else:
+                    print(updates)
+
+                print("\n")
+
+        messages = []
+        config = {"configurable": {"user_id": "1", "thread_id": "1"}}
+        for chunk in self.runnable.stream(
+            {"messages": [("user", question)]}, config=config
+        ):
+            if "messages" in chunk:
+                messages.extend(chunk["messages"])
+            pretty_print_stream_chunk(chunk)
+
         # FIXME: session_id
         response = await cl.make_async(self.runnable.invoke)(
             {"messages": [("user", question)]},
